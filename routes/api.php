@@ -45,7 +45,7 @@ Route::middleware('auth:api')->group(function(){
     Route::post('user/change-password', [App\Http\Controllers\UserProfileController::class, 'changePassword']);
 });
 
-Route::group(['middleware' => ['role:operador|supervisor']], function () {
+Route::group(['middleware' => ['auth:api','role:operador|supervisor']], function () {
     Route::get('dashboard/stats', [App\Http\Controllers\DashboardController::class, 'stats']);
     Route::apiResource('operadores', App\Http\Controllers\OperadoresController::class);
     Route::get('reportes/personal', [App\Http\Controllers\ReporteController::class, 'index']);
