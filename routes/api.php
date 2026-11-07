@@ -67,7 +67,7 @@ Route::group(['middleware' => ['auth:api','role:operador|supervisor']], function
 });
 
 
-Route::middleware(['auth:api', RoleMiddleware::class . ':operador'])->group(function () {
-    //Route::get('reportes/personal', [App\Http\Controllers\ReporteController::class, 'index']);
-    //Route::get('reportes/personal/{id}/pacientes', [App\Http\Controllers\ReporteController::class, 'showPacientes']);
+Route::middleware(['auth:api', 'role:operador'])->group(function () {
+    // Route::get('reportes/personal', [App\Http\Controllers\ReporteController::class, 'index']);
+    // Route::get('reportes/personal/{id}/pacientes', [App\Http\Controllers\ReporteController::class, 'showPacientes']);
 });
