@@ -13,7 +13,7 @@ return new class extends Migration
     {
         Schema::table('pacientes', function (Blueprint $table) {
             // Creamos la columna con 'Activo' por defecto
-        $table->string('estado')->default('Activo')->after('hc'); 
+        $table->string('estado')->default('Activo'); 
         $table->index('estado'); // Indexamos para que las búsquedas sean rápidas
         });
     }

@@ -61,10 +61,7 @@ class Operador extends Model
             return self::normalizeHorarioMensual($value);
         }
 
-        if (isset($this->attributes['horario_semanal'])) {
-            return self::normalizeHorarioMensual($this->attributes['horario_semanal']);
-        }
-
+        
         return null;
     }
 
@@ -74,15 +71,6 @@ class Operador extends Model
         $this->attributes['horario_mensual'] = $normalized !== null ? json_encode($normalized) : null;
     }
 
-    public function getHorarioSemanalAttribute($value)
-    {
-        return $this->horario_mensual;
-    }
-
-    public function setHorarioSemanalAttribute($value): void
-    {
-        $this->setHorarioMensualAttribute($value);
-    }
 
     public function user()
     {
