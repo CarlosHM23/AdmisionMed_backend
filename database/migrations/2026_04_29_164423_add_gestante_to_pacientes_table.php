@@ -12,7 +12,7 @@ return new class extends Migration
     public function up(): void
     {
         Schema::table('pacientes', function (Blueprint $table) {
-            $table->boolean('gestante')->default(false)->after('fecha_nacimiento');
+            $table->boolean('gestante')->default(0);
         });
     }
 
