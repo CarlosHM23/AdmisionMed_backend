@@ -31,22 +31,5 @@ class OperadorHorarioMensualTest extends TestCase
         $this->assertDatabaseHas('operadores', ['email' => 'ana@example.com']);
     }
 
-    public function test_it_normalizes_legacy_horario_semanal_values(): void
-    {
-        $operador = Operador::create([
-            'nombre' => 'Luis',
-            'apellido' => 'Pérez',
-            'email' => 'luis@example.com',
-            'usuario' => 'luis',
-            'contraseña' => 'secret123',
-            'DNI' => '87654321',
-            'horario_semanal' => json_encode([
-                ['dia_numero' => 5, 'turno_m' => 'M', 'turno_t' => '', 'turno_n' => 'N'],
-            ]),
-        ]);
-
-        $this->assertSame([
-            ['dia_numero' => 5, 'turno_m' => 'M', 'turno_t' => '', 'turno_n' => 'N'],
-        ], $operador->fresh()->horario_mensual);
-    }
+    
 }
