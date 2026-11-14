@@ -8,6 +8,9 @@ use Illuminate\Support\Facades\Cache;
 use App\Http\Controllers\Traits\ApiResponse;
 use App\Http\Requests\StoreEspecialidadRequest;
 use App\Http\Requests\UpdateEspecialidadRequest;
+use GuzzleHttp\Middleware;
+use Illuminate\Auth\Access\Response;
+use Spatie\Permission\Models\Role;
 
 class EspecialidadesController extends Controller
 {
@@ -33,7 +36,7 @@ class EspecialidadesController extends Controller
         } else {
             $especialidades = $query->paginate($perPage);
         }
-
+        
         return response()->json($especialidades);
     }
 
