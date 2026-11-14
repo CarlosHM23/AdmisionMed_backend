@@ -46,22 +46,24 @@ Route::middleware('auth:api')->group(function(){
 });
 
 Route::group(['middleware' => ['auth:api','role:operador|supervisor']], function () {
+    //Operador
     Route::get('dashboard/stats', [App\Http\Controllers\DashboardController::class, 'stats']);
-    Route::apiResource('operadores', App\Http\Controllers\OperadoresController::class);
+    
     Route::get('reportes/personal', [App\Http\Controllers\ReporteController::class, 'index']);
     Route::get('reportes/personal/{id}/pacientes', [App\Http\Controllers\ReporteController::class, 'showPacientes']);
-    Route::apiResource('especialidades', App\Http\Controllers\EspecialidadesController::class);
+    Route::apiResource('especialidades', App\Http\Controllers\EspecialidadesController::class)->middleware('role:supervisor');
     
     Route::get('pacientes/next-hc', [App\Http\Controllers\PacientesController::class, 'getNextHC']);
 
     Route::apiResource('pacientes', App\Http\Controllers\PacientesController::class);
-    
     Route::apiResource('personal_salud', App\Http\Controllers\PersonaSaludController::class);
     Route::get('citas/next-ticket', [App\Http\Controllers\CitasController::class, 'getNextTicket']); 
     Route::post('citas/cupos-config', [App\Http\Controllers\CitasController::class, 'storeCuposConfig']);
     Route::apiResource('citas', App\Http\Controllers\CitasController::class);
-    
     Route::get('operadores/me', function(){ return response()->json(auth('api')->user()->operador ?? null); });
+    
+    //Supervisor
+    Route::apiResource('operadores', App\Http\Controllers\OperadoresController::class)->middleware('role:supervisor');
     Route::get('admin/dashboard', function(){ return ['ok' => 'admin']; })->middleware('role:supervisor');
     Route::get('users', [App\Http\Controllers\UsersController::class, 'index'])->middleware('role:supervisor');
 });
