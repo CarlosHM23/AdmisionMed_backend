@@ -9,6 +9,7 @@ class PersonalSalud extends Model
     protected $table = 'personal_salud';
 
     protected $fillable = [
+        'user_id',
         'nombres',
         'apellidos',
         'dni',
@@ -36,6 +37,10 @@ class PersonalSalud extends Model
     public function pacientes()
     {
         return $this->hasMany(Paciente::class, 'personal_salud_id');
+    }
+
+    public function user(){
+        return $this->belongsTo(User::class, 'user_id');
     }
 
     public function horarioMensual()

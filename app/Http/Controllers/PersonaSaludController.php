@@ -6,6 +6,8 @@ use App\Http\Controllers\Traits\ApiResponse;
 use App\Http\Requests\StorePersonalSaludRequest;
 use App\Http\Requests\UpdatePersonalSaludRequest;
 use App\Models\PersonalSalud;
+use App\Models\User;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Http\Request;
 
 class PersonaSaludController extends Controller
@@ -36,8 +38,30 @@ class PersonaSaludController extends Controller
      */
     public function store(StorePersonalSaludRequest $request)
     {
-        $personalsalud = PersonalSalud::create($request->validated());
-        return $this->success($personalsalud, 'Personal de salud creado', 201);
+        
+        $data = $request->validated();
+
+    $personalsalud = DB::transaction(function () use ($data) {
+        
+        $user = User::create([
+            'name'     => $data['nombres'],
+            'apellido' => $data['apellidos'],
+            'email'    => $data['email'],
+            'telefono' => $data['telefono'] ?? null,
+            'password' => $data['password'] ?? $data['dni'],
+        ]);
+
+        
+        $user->assignRole('personal_salud');
+
+        
+        $data['user_id'] = $user->id;
+        unset($data['password']); 
+
+        return PersonalSalud::create($data);
+    });
+
+    return $this->success($personalsalud->load('user'), 'Personal de salud creado', 201);
     }
 
     /**
@@ -65,7 +89,16 @@ class PersonaSaludController extends Controller
     public function destroy($id)
     {
         $personalsalud = PersonalSalud::findOrFail($id);
+
+    DB::transaction(function () use ($personalsalud) {
+        $user = $personalsalud->user;
         $personalsalud->delete();
-        return $this->success(null, 'Personal de salud eliminado');
+        
+        if ($user) {
+            $user->delete();
+        }
+    });
+
+    return $this->success(null, 'Personal de salud eliminado');
     }
 }
