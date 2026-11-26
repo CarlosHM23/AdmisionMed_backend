@@ -98,6 +98,47 @@ class AdmissionAppointmentsTest extends AdmissionFeatureTestCase
         ])->assertUnprocessable()
             ->assertJsonValidationErrors(['estado']);
 
+        $this->postJson('/api/citas', [
+            'paciente_id' => $patient->id,
+            'personal_salud_id' => $healthStaff->id,
+            'especialidad_id' => $specialty->id,
+            'fecha' => '2026-11-22',
+            'hora' => '10:30',
+            'estado' => null,
+            'nro_ticket' => 1,
+            'operador_id' => $operator->id,
+        ])->assertUnprocessable()
+            ->assertJsonValidationErrors(['estado']);
+
         $this->assertDatabaseCount('citas', 0);
+    }
+
+    public function test_cp_adm_07_update_rejects_state_outside_database_constraint(): void
+    {
+        $operatorUser = User::factory()->operador()->create();
+        $patient = $this->createPatientRecord();
+        $specialty = $this->createSpecialtyRecord();
+        $healthStaff = $this->createHealthStaffRecord($specialty);
+        $operator = $this->createOperatorRecord();
+        $appointment = $this->createAppointmentRecord(
+            $patient,
+            $healthStaff,
+            $specialty,
+            $operator
+        );
+
+        $this->authenticateAs($operatorUser)
+            ->putJson('/api/citas/' . $appointment->id, ['estado' => 'no-valido'])
+            ->assertUnprocessable()
+            ->assertJsonValidationErrors(['estado']);
+
+        $this->putJson('/api/citas/' . $appointment->id, ['estado' => null])
+            ->assertUnprocessable()
+            ->assertJsonValidationErrors(['estado']);
+
+        $this->assertDatabaseHas('citas', [
+            'id' => $appointment->id,
+            'estado' => 'pendiente',
+        ]);
     }
 }
