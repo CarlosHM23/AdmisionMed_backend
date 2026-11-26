@@ -19,6 +19,11 @@ class OperadoresController extends Controller
         return $this->success(Operador::with('user')->orderBy('id', 'desc')->paginate(10));
     }
 
+    public function show($id)
+    {
+        return $this->success(Operador::with('user')->findOrFail($id));
+    }
+
     public function store(StoreOperadorRequest $request)
     {
         Log::info('Datos recibidos en store:', $request->all());

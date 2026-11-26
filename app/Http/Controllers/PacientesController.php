@@ -19,6 +19,7 @@ class PacientesController extends Controller
     {
         $page = $request->get('page');
         $perPage = max(1, (int) $request->input('per_page', 15));
+        $user = auth('api')->user();
 
         $query = Paciente::select(
             'id',
@@ -37,6 +38,31 @@ class PacientesController extends Controller
             'gestante',
             'estado'
         );
+
+        if ($request->filled('search')) {
+            $search = $request->input('search');
+            $query->where(function ($query) use ($search) {
+                $query->where('nombre', 'like', "%{$search}%")
+                    ->orWhere('apellido', 'like', "%{$search}%")
+                    ->orWhere('dni', 'like', "%{$search}%")
+                    ->orWhere('HistoriaClinica', 'like', "%{$search}%");
+            });
+        }
+
+        if ($user && $user->hasRole('personal_salud')) {
+        $personalId = $user->personalSalud?->id;
+
+        if (!$personalId) {
+            return ($page === 'all' || $page === '-1')
+                ? response()->json([])
+                : $this->success(Paciente::whereRaw('1 = 0')->paginate($perPage));
+        }
+
+        $query->whereHas('citas', function ($q) use ($personalId) {
+            $q->where('personal_salud_id', $personalId);
+        });
+    }
+    
         // --- EL FILTRO QUE SOLICITASTE ---
         if ($request->has('estado')) {
             $query->where('estado', $request->estado);
@@ -93,7 +119,7 @@ class PacientesController extends Controller
     {
         $paciente = Paciente::with(['citas' => function($q){ $q->select('id','paciente_id','fecha','hora','estado'); }])
             ->select('id','nombre','apellido','dni','telefono','email','gestante','direccion','genero','fecha_nacimiento')
-            ->find($id);
+            ->findOrFail($id);
 
         return $this->success($paciente);
     }

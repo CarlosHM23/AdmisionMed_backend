@@ -16,6 +16,20 @@ class CitasController extends Controller
 
     public function index(Request $request)
     {
+        $user = auth('api')->user();
+        $query = Cita::with(['paciente', 'personalSalud']); // Mantén las relaciones que ya uses
+
+    
+        if ($user->hasRole('personal_salud')) {
+            $personalId = $user->personalSalud?->id;
+
+            if (!$personalId) {
+                return $this->success([]); 
+
+            }
+            $query->where('personal_salud_id', $personalId);
+        }
+
         $query = Cita::with(['paciente', 'personalSalud', 'operador', 'especialidad'])
             ->leftJoin('pacientes', 'citas.paciente_id', '=', 'pacientes.id')
             ->select('citas.*');
@@ -122,6 +136,14 @@ class CitasController extends Controller
 
         $cita = Cita::create($data);
         return $this->success($cita, 'Ticket #' . $siguienteTicket . ' generado.', 201);
+    }
+
+    public function show($id)
+    {
+        $cita = Cita::with(['paciente', 'personalSalud', 'operador', 'especialidad'])
+            ->findOrFail($id);
+
+        return $this->success($cita);
     }
 
     public function update(UpdateCitaRequest $request, $id)
