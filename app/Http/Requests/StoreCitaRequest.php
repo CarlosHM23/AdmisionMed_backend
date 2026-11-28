@@ -29,7 +29,7 @@ class StoreCitaRequest extends FormRequest
             'fecha' => 'required|date',
             'turno' => 'nullable|string',
             'hora' => 'nullable',
-            'estado' => 'nullable|string',
+            'estado' => 'sometimes|in:pendiente,completada,cancelada',
             'nro_ticket' => 'required|integer',
             'total_tickets_dia' => 'nullable|integer',
             'observaciones' => 'nullable|string',

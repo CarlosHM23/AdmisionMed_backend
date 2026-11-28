@@ -29,7 +29,7 @@ class UpdateCitaRequest extends FormRequest
             'fecha' => 'sometimes|required|date',
             'turno' => 'nullable|string',
             'hora' => 'nullable',
-            'estado' => 'nullable|string',
+            'estado' => 'sometimes|in:pendiente,completada,cancelada',
             'nro_ticket' => 'sometimes|required|integer',
             'total_tickets_dia' => 'nullable|integer',
             'observaciones' => 'nullable|string',

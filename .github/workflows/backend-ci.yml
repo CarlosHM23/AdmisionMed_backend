@@ -44,13 +44,16 @@ jobs:
         run: |
           cp .env.example .env.testing
           php artisan key:generate --env=testing
+          php artisan jwt:secret --env=testing --force
 
       - name: Ejecutar Migraciones y Tests
         env:
+          APP_ENV: testing
           DB_CONNECTION: pgsql
           DB_HOST: 127.0.0.1
           DB_PORT: 5432
           DB_DATABASE: testing_db
           DB_USERNAME: postgres
           DB_PASSWORD: secret_password
+          JWT_SECRET: testing_jwt_secret_key_for_ci_pipeline_32chars
         run: php artisan test

@@ -10,6 +10,7 @@ use Illuminate\Notifications\Notifiable;
 use Spatie\Permission\Traits\HasRoles;
 use Tymon\JWTAuth\Contracts\JWTSubject;
 use App\Models\Operador;
+use App\Models\PersonalSalud;
 
 class User extends Authenticatable implements JWTSubject
 {
@@ -77,5 +78,9 @@ class User extends Authenticatable implements JWTSubject
     public function operador()
     {
         return $this->hasOne(Operador::class, 'user_id');
+    }
+
+    public function personalSalud(){
+        return $this->hasOne(PersonalSalud::class, 'user_id');
     }
 }

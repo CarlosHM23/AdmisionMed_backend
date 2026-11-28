@@ -13,7 +13,7 @@ class RolesAndPermissionsSeeder extends Seeder {
       'crear pacientes','ver pacientes','editar pacientes','eliminar pacientes',
       'crear operadores','ver operadores','editar operadores','eliminar operadores',
       'ver personal_salud','crear personal_salud','editar personal_salud','eliminar personal_salud',
-      'ver reportes','crear reportes','editar reportes','eliminar reportes'
+      'ver reportes','crear reportes','editar reportes','eliminar reportes','atender citas'
     ];
 
     foreach ($permissions as $p) {
@@ -31,5 +31,10 @@ class RolesAndPermissionsSeeder extends Seeder {
 
     $supervisor = Role::firstOrCreate(['name'=>'supervisor','guard_name'=>$guard]);
     $supervisor->syncPermissions(['ver citas','ver pacientes', 'ver operadores','ver personal_salud', 'crear operadores', 'editar operadores', 'eliminar operadores', 'ver reportes']);
+
+    $personalSalud = Role::firstOrCreate(['name'=>'personal_salud','guard_name'=>$guard]);
+    $personalSalud->syncPermissions([
+            'ver citas', 'editar citas', 'atender citas', 'ver pacientes', 'ver reportes'
+        ]);
   }
 }

@@ -3,6 +3,14 @@
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\AuthController;
+Use App\Http\Controllers\CitasController;
+Use App\Http\Controllers\PacientesController;
+Use App\Http\Controllers\ReporteController;
+Use App\Http\Controllers\DashboardController;
+use App\Http\Controllers\EspecialidadesController;
+Use App\Http\Controllers\PersonaSaludController;
+Use App\Http\Controllers\OperadoresController;
+Use App\Http\Controllers\UsersController;
 use Spatie\Permission\Middleware\RoleMiddleware;
 
 Route::get('/user', function (Request $request) {
@@ -14,13 +22,6 @@ Route::post('logout', [AuthController::class, 'logout'])->middleware('auth:api')
 Route::post('refresh', [AuthController::class, 'refresh'])->middleware('auth:api');
 //Route::get('me', [AuthController::class, 'me'])->middleware('auth:api');
 
-// Rutas protegidas: requiere autenticación
-Route::middleware('auth:api')->group(function () {
-    //Route::apiResource('especialidades', App\Http\Controllers\EspecialidadesController::class)->middleware(RoleMiddleware::class . ':operador|supervisor');
-    //Route::apiResource('pacientes', App\Http\Controllers\PacientesController::class)->middleware(RoleMiddleware::class . ':operador|supervisor');
-    //Route::apiResource('personal_salud', App\Http\Controllers\PersonaSaludController::class)->middleware(RoleMiddleware::class . ':operador|supervisor');
-    //Route::apiResource('citas', App\Http\Controllers\CitasController::class)->middleware(RoleMiddleware::class . ':operador|supervisor');
-});
 
 Route::middleware('auth:api')->group(function(){
 
@@ -45,31 +46,50 @@ Route::middleware('auth:api')->group(function(){
     Route::post('user/change-password', [App\Http\Controllers\UserProfileController::class, 'changePassword']);
 });
 
-Route::group(['middleware' => ['auth:api','role:operador|supervisor']], function () {
-    //Operador
-    Route::get('dashboard/stats', [App\Http\Controllers\DashboardController::class, 'stats']);
-    
-    Route::get('reportes/personal', [App\Http\Controllers\ReporteController::class, 'index']);
-    Route::get('reportes/personal/{id}/pacientes', [App\Http\Controllers\ReporteController::class, 'showPacientes']);
-    Route::apiResource('especialidades', App\Http\Controllers\EspecialidadesController::class)->middleware('role:supervisor');
-    
-    Route::get('pacientes/next-hc', [App\Http\Controllers\PacientesController::class, 'getNextHC']);
+Route::middleware(['auth:api'])->group(function () {
 
-    Route::apiResource('pacientes', App\Http\Controllers\PacientesController::class);
-    Route::apiResource('personal_salud', App\Http\Controllers\PersonaSaludController::class);
-    Route::get('citas/next-ticket', [App\Http\Controllers\CitasController::class, 'getNextTicket']); 
-    Route::post('citas/cupos-config', [App\Http\Controllers\CitasController::class, 'storeCuposConfig']);
-    Route::apiResource('citas', App\Http\Controllers\CitasController::class);
-    Route::get('operadores/me', function(){ return response()->json(auth('api')->user()->operador ?? null); });
+    // ACCESO COMPARTIDO (Operador, Supervisor y Personal de Salud)
     
-    //Supervisor
-    Route::apiResource('operadores', App\Http\Controllers\OperadoresController::class)->middleware('role:supervisor');
-    Route::get('admin/dashboard', function(){ return ['ok' => 'admin']; })->middleware('role:supervisor');
-    Route::get('users', [App\Http\Controllers\UsersController::class, 'index'])->middleware('role:supervisor');
-});
+    Route::middleware(['role:operador|supervisor|personal_salud'])->group(function () {
+        
+        Route::get('pacientes/next-hc', [PacientesController::class, 'getNextHC'])
+            ->middleware('role:operador|supervisor');
 
+        
+        Route::apiResource('pacientes', PacientesController::class)->only(['index', 'show']);
+        Route::apiResource('citas', CitasController::class)->only(['index', 'show']);
+        
+        Route::get('reportes/personal', [ReporteController::class, 'index']);
+        Route::get('reportes/personal/{id}/pacientes', [ReporteController::class, 'showPacientes']);
+    });
 
-Route::middleware(['auth:api', 'role:operador'])->group(function () {
-    // Route::get('reportes/personal', [App\Http\Controllers\ReporteController::class, 'index']);
-    // Route::get('reportes/personal/{id}/pacientes', [App\Http\Controllers\ReporteController::class, 'showPacientes']);
+    
+    // OPERADOR Y SUPERVISOR
+   
+    Route::middleware(['role:operador|supervisor'])->group(function () {
+        Route::get('dashboard/stats', [DashboardController::class, 'stats']);
+
+        
+        Route::apiResource('pacientes', PacientesController::class)->except(['index', 'show']);
+
+        // CRUD completo de Personal de Salud y Citas
+        Route::apiResource('personal_salud', PersonaSaludController::class);
+        Route::get('citas/next-ticket', [CitasController::class, 'getNextTicket']);
+        Route::post('citas/cupos-config', [CitasController::class, 'storeCuposConfig']);
+        Route::apiResource('citas', CitasController::class)->except(['index', 'show']);
+
+        Route::get('operadores/me', function () {
+            return response()->json(auth('api')->user()->operador ?? null);
+        });
+    });
+
+    // SUPERVISOR
+    Route::middleware(['role:supervisor'])->group(function () {
+        Route::apiResource('especialidades', EspecialidadesController::class);
+        Route::apiResource('operadores', OperadoresController::class);
+        Route::get('users', [UsersController::class, 'index']);
+        Route::get('admin/dashboard', function () {
+            return ['ok' => 'admin'];
+        });
+    });
 });
