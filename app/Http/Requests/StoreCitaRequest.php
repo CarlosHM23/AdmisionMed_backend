@@ -25,7 +25,7 @@ class StoreCitaRequest extends FormRequest
         return [
             'paciente_id' => 'required|exists:pacientes,id',
             'personal_salud_id' => 'required|nullable|exists:personal_salud,id',
-            'especialidad_id' => 'required|exists:especialidades,id',
+            'especialidad_id' => 'required|nullable|exists:especialidades,id',
             'fecha' => 'required|date',
             'turno' => 'nullable|string',
             'hora' => 'nullable',
