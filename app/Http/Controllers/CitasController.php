@@ -9,6 +9,7 @@ use App\Http\Controllers\Traits\ApiResponse;
 use App\Http\Requests\StoreCitaRequest;
 use App\Http\Requests\UpdateCitaRequest;
 use App\Http\Requests\StoreCuposConfigRequest;
+use Illuminate\Support\Facades\DB;
 
 class CitasController extends Controller
 {
@@ -89,53 +90,55 @@ class CitasController extends Controller
     {
         $data = $request->validated();
 
-        // Contar citas existentes para esa fecha y especialidad
-        $citasExistentes = Cita::whereDate('fecha', $data['fecha'])
-            ->where('especialidad_id', $data['especialidad_id'])
-            ->count();
+        return DB::transaction(function () use ($data) {
+            DB::table('especialidades')
+                ->where('id', $data['especialidad_id'])
+                ->lockForUpdate()
+                ->first();
 
-        // Obtener cupo configurado (default 16)
-        $cupoConfig = CuposPorEspecialidad::where('fecha', $data['fecha'])
-            ->where('especialidad_id', $data['especialidad_id'])
-            ->first();
+            $citasExistentes = Cita::whereDate('fecha', $data['fecha'])
+                ->where('especialidad_id', $data['especialidad_id'])
+                ->count();
 
-        $cupoMaximo = $cupoConfig?->cantidad_cupos ?? 16;
+            $cupoConfig = CuposPorEspecialidad::whereDate('fecha', $data['fecha'])
+                ->where('especialidad_id', $data['especialidad_id'])
+                ->first();
 
-        // Validar límite de cupos
-        if ($citasExistentes >= $cupoMaximo) {
-            return $this->error(
-                [
-                    'error_code' => 'cupos_llenos',
-                    'cupos_maximo' => $cupoMaximo,
-                    'citas_actuales' => $citasExistentes
-                ],
-                'Se ha alcanzado el límite de cupos para esta especialidad',
-                400
-            );
-        }
+            $cupoMaximo = $cupoConfig?->cantidad_cupos ?? 16;
 
-        // Tickets independientes por especialidad y fecha
-        $maxTicket = Cita::whereDate('fecha', $data['fecha'])
-            ->where('especialidad_id', $data['especialidad_id'])
-            ->max('nro_ticket');
+            if ($citasExistentes >= $cupoMaximo) {
+                return $this->error(
+                    [
+                        'error_code' => 'cupos_llenos',
+                        'cupos_maximo' => $cupoMaximo,
+                        'citas_actuales' => $citasExistentes
+                    ],
+                    'Se ha alcanzado el límite de cupos para esta especialidad',
+                    400
+                );
+            }
 
-        $siguienteTicket = ($maxTicket ?? 0) + 1;
+            $maxTicket = Cita::whereDate('fecha', $data['fecha'])
+                ->where('especialidad_id', $data['especialidad_id'])
+                ->max('nro_ticket');
 
-        // Validar cupo máximo por ticket
-        if ($siguienteTicket > $cupoMaximo) {
-            return $this->error(
-                "Se ha alcanzado el cupo máximo ({$cupoMaximo}) de tickets para esta especialidad en la fecha {$data['fecha']}.",
-                422
-            );
-        }
+            $siguienteTicket = ($maxTicket ?? 0) + 1;
 
-        $data['nro_ticket'] = $siguienteTicket;
-        if (!isset($data['operador_id'])) {
-            $data['operador_id'] = auth('api')->id();
-        }
+            if ($siguienteTicket > $cupoMaximo) {
+                return $this->error(
+                    "Se ha alcanzado el cupo máximo ({$cupoMaximo}) de tickets para esta especialidad en la fecha {$data['fecha']}.",
+                    422
+                );
+            }
 
-        $cita = Cita::create($data);
-        return $this->success($cita, 'Ticket #' . $siguienteTicket . ' generado.', 201);
+            $data['nro_ticket'] = $siguienteTicket;
+            if (!isset($data['operador_id'])) {
+                $data['operador_id'] = auth('api')->id();
+            }
+
+            $cita = Cita::create($data);
+            return $this->success($cita, 'Ticket #' . $siguienteTicket . ' generado.', 201);
+        }, 5);
     }
 
     public function show($id)
